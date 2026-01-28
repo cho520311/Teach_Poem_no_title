@@ -25,7 +25,6 @@
             width: 100%; background: rgba(255, 255, 255, 0.95); 
             padding: 20px; border: 2px solid #ddd; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-        
         .header-area { text-align: center; margin-bottom: 20px; }
         h1 { color: var(--classic-red); font-size: 32px; margin: 0; letter-spacing: 6px; font-weight: bold; }
         .instructor { color: var(--ink-black); font-size: 22px; font-weight: bold; margin: 15px 0 5px 0; }
@@ -75,7 +74,7 @@
         .ze { color: var(--classic-red) !important; }
         
         @media print {
-            .header-area, textarea, .btn-group, .info-section { display: none !important; }
+            .header-area, textarea, .btn-group, .info-section, #text-preview-area { display: none !important; }
             body { background: white; padding: 0; }
             .container { border: none; box-shadow: none; width: 100%; }
             #output { padding: 0; }
@@ -94,6 +93,7 @@
     
     <div class="btn-group">
         <button onclick="process()">開始轉換</button>
+        <button onclick="exportToTxtOnly()">下載文字txt版</button>
         <button onclick="handlePrint()">列印/PDF</button>
         <a href="#infoBox" class="btn-link">說明聯絡</a>
         <a href="https://tpps.org.tw/home.jsp?lang=tw" target="_blank" class="btn-link">臺灣瀛社詩學會</a>
@@ -106,9 +106,9 @@
         <h3>謝謝您的蒞臨指教</h3>
         <p>有關音標中有 <strong>ir</strong> 或 <strong>er</strong> 的出現，茲解釋如下：</p>
         <ul>
-            <li><strong>(1) 區分中古音格局：</strong>研究顯示，在閩南方言的「白讀音」中，ir 和 er 的存在能反映出比《切韻》更古老的音韻對立。</li>
-            <li><strong>(2) 反映「支、之、脂、微」之別：</strong>在中古音的分類中，「支、之、脂、微」這幾個韻類在現代優勢腔中大多已經合併（都發 i 音），但在保留老泉州話特徵的層次中，透過 er（[ə]）或 ir（[ɨ]）的加入，可以區分出哪些字屬於「支」韻，哪些字屬於「之、脂」韻。</li>
-            <li><strong>(3) 層次辨識：</strong>在學術研究上，這代表該字屬於較古老的歷史層次（如六朝層），用來區別那些在現代腔調中已經聽不出差別的古代韻類。</li>
+            <li><strong>(1) 區分中古音格局</strong></li>
+            <li><strong>(2) 反映「支、之、脂、微」之別</strong></li>
+            <li><strong>(3) 層次辨識</strong></li>
         </ul>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
         <p>
@@ -120,7 +120,7 @@
 </div>
 
 <script>
-// 此處保留您原始文件中的完整字典檔
+// 此處已包含完整字典內容
 const dict = {
 "ㄏ": "tue1", "一": "it4", "丨": "kun2", "丶": "tu2", "丿": "phiat4", "乀": "hut4", "乙": "it4", "亅": "kuat8", "𠂆": "e7", 
   "𠄌": "kuat4", "𡿨": "kian2", "丁": "ting1", "丂": "kho2", "七": "tshit4", "丄": "siong6", "丅": "ha6", "丩": "kiu1", "乂": "gue7", "乃": "nai2", 
@@ -2566,29 +2566,21 @@ const dict = {
   "蛋": "tan6", "酶": "mue5", "釨": "tsir2", "圩": "u5", "颪": "kua1", "厘": "li5", "觔": "kin1", "瓮": "ong3", "韲": "tse1", "炸": "tse3", 
   "嚐": "siang5", "划": "hua5", "鯱": "hoo2", "奶": "nai2", "籴": "tik8", "搬": "puan1", "慤": "khak4", "廻": "hue5", "蹤": "tsiong1", "琉": "liu5", 
   "鶲": "ong1", "烏": "oo1"
-
 };
 
-
-// 新增：用於修改音標時自動切換顏色的函數
-function updateColor(el) {
-    const text = el.innerText.trim();
-    const tone = text.slice(-1); // 取得最後一個字元
-    
-    // 移除現有的顏色類別
-    el.classList.remove('ping', 'ze');
-    
-    // 重新根據數字判定顏色
+function updateColor(element) {
+    let text = element.innerText.trim();
+    let tone = text.slice(-1);
     if (tone === "1" || tone === "5") {
-        el.classList.add('ping');
-    } else if (/[0-9]/.test(tone)) {
-        el.classList.add('ze');
+        element.className = "ping";
+    } else if (/[234678]/.test(tone)) {
+        element.className = "ze";
     }
 }
 
 function process() {
-    const input = document.getElementById('poemInput').value;
-    const outputDiv = document.getElementById('output');
+    let input = document.getElementById('poemInput').value;
+    let outputDiv = document.getElementById('output');
     if (!input.trim()) return;
 
     let lines = input.split('\n');
@@ -2608,7 +2600,6 @@ function process() {
             let tone = pinyin.slice(-1);
             let colorClass = (tone === "1" || tone === "5") ? "ping" : "ze";
             
-            // 加入 oninput 監聽器，當內容改變時執行 updateColor(this)
             lineHTML += `<ruby>${char}<rt contenteditable="true" class="${colorClass}" oninput="updateColor(this)">${pinyin}</rt></ruby>`;
         }
         
@@ -2622,13 +2613,60 @@ function process() {
 }
 
 function handlePrint() {
-    const input = document.getElementById('poemInput').value.trim();
-    if (input) {
-        const firstLine = input.split('\n')[0];
-        const hanOnly = firstLine.replace(/[^\u4E00-\u9FFF]/g, '');
-        document.title = hanOnly || "古韻詩詞";
-    }
     window.print();
+}
+
+// 核心功能：移除 Word 匯出，改為顯示純文字預覽並下載 TXT
+function exportToTxtOnly() {
+    const outputDiv = document.getElementById('output');
+    if (!outputDiv.innerHTML.trim()) {
+        alert("請先輸入詩句並點擊『開始轉換』");
+        return;
+    }
+
+    // 1. 提取標註結果產生純文字內容 (格式：漢字(拼音))
+    let txtResult = "";
+    const lines = outputDiv.querySelectorAll('div, .first-line-wrapper');
+    
+    lines.forEach(line => {
+        let lineText = "";
+        line.childNodes.forEach(node => {
+            if (node.nodeName === "RUBY") {
+                const kanji = node.firstChild.textContent;
+                const pinyin = node.querySelector('rt').innerText;
+                lineText += `${kanji}(${pinyin})`;
+            } else if (node.nodeName === "SPAN" || node.nodeType === Node.TEXT_NODE) {
+                lineText += node.textContent; 
+            }
+        });
+        if (lineText.trim()) txtResult += lineText + "\n";
+    });
+
+    // 2. 呈現預覽區域
+    const oldPreview = document.getElementById('text-preview-area');
+    if (oldPreview) oldPreview.remove();
+
+    const previewSection = document.createElement('div');
+    previewSection.id = 'text-preview-area';
+    previewSection.style.cssText = "margin-top:30px; padding:20px; border:1px solid #ccc; border-radius:8px; font-size:18px; text-align:left; background:#fdfdfd;";
+    previewSection.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <strong style="color:var(--classic-red); font-size:20px;">純文字標註結果 (已同步下載 TXT)：</strong>
+        </div>
+        <pre style="white-space: pre-wrap; font-family: inherit; margin:0; line-height:1.8;">${txtResult}</pre>
+    `;
+    outputDiv.appendChild(previewSection);
+
+    // 3. 執行檔案下載
+    const blob = new Blob([txtResult], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = '古韻詩詞純文字標註.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 </script>
 </body>
